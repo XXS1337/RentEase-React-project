@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLoaderData, useNavigate, redirect } from 'react-router-dom';
-import { collection, getDocs, query, where, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, deleteDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { FaRegTrashAlt, FaEdit } from 'react-icons/fa';
 import { db } from '../../../../firebase';
 import styles from './MyFlats.module.css';
@@ -38,7 +38,7 @@ const MyFlats = () => {
   // Function to delete a flat and its associated messages
   const handleDeleteFlat = async (flatId) => {
     try {
-      // Query messages associated with the flat
+      // 1. Query messages associated with the flat
       const messagesQuery = query(collection(db, 'messages'), where('flatID', '==', flatId));
       const messagesSnapshot = await getDocs(messagesQuery);
 
@@ -46,13 +46,33 @@ const MyFlats = () => {
       const deleteMessagePromises = messagesSnapshot.docs.map((doc) => deleteDoc(doc.ref));
       await Promise.all(deleteMessagePromises);
 
-      // Delete the flat itself
+      // 2. Remove the flat from other users' favorites
+      const usersRef = collection(db, 'users');
+      const usersSnap = await getDocs(usersRef);
+
+      const removeFavoritesPromises = [];
+      usersSnap.forEach((userDoc) => {
+        const userData = userDoc.data();
+        const userFavorites = userData.favoriteFlats || [];
+
+        // Check if the flat is in the user's favorites
+        if (userFavorites.includes(flatId)) {
+          removeFavoritesPromises.push(
+            updateDoc(doc(db, 'users', userDoc.id), {
+              favoriteFlats: arrayRemove(flatId),
+            })
+          );
+        }
+      });
+      await Promise.all(removeFavoritesPromises);
+
+      // 3. Delete the flat itself
       await deleteDoc(doc(db, 'flats', flatId));
 
-      // Update local state to remove the deleted flat - for faster display
+      // 4. Update local state to remove the deleted flat - for faster display
       setMyFlats((prevFlats) => prevFlats.filter((flat) => flat.id !== flatId));
     } catch (error) {
-      console.error('Error deleting flat and its linked messages:', error);
+      console.error('Error deleting flat and its linked data:', error);
     }
   };
 
