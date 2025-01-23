@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLoaderData, useNavigate, redirect } from 'react-router-dom';
-import { collection, getDocs, query, where, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, deleteDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { FaRegTrashAlt, FaEdit } from 'react-icons/fa';
 import { db } from '../../../../firebase';
 import { Flat } from '../../../types/Flat';
@@ -50,6 +50,26 @@ const MyFlats: React.FC = () => {
       // Delete all associated messages
       const deleteMessagePromises = messagesSnapshot.docs.map((doc) => deleteDoc(doc.ref));
       await Promise.all(deleteMessagePromises);
+
+      // Remove the flat from other users' favorites
+      const usersRef = collection(db, 'users');
+      const usersSnap = await getDocs(usersRef);
+
+      const removeFavoritesPromises: Promise<void>[] = [];
+      usersSnap.forEach((userDoc) => {
+        const userData = userDoc.data();
+        const userFavorites = userData.favoriteFlats || [];
+
+        // Check if the flat is in the user's favorites
+        if (userFavorites.includes(flatId)) {
+          removeFavoritesPromises.push(
+            updateDoc(doc(db, 'users', userDoc.id), {
+              favoriteFlats: arrayRemove(flatId),
+            })
+          );
+        }
+      });
+      await Promise.all(removeFavoritesPromises);
 
       // Delete the flat itself
       await deleteDoc(doc(db, 'flats', flatId));
