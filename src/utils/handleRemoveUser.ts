@@ -12,16 +12,16 @@ const handleRemoveUser = async <T extends { id: string }>(userId: string, setUse
 
     // 2. Delete all messages sent by this user
     const messagesRef = collection(db, 'messages');
-    const messagesQuery = query(messagesRef, where('senderId', '==', userId));
-    const messagesSnap = await getDocs(messagesQuery);
-    const messageDeletePromises = messagesSnap.docs.map((msgDoc) => deleteDoc(doc(db, 'messages', msgDoc.id)));
-    await Promise.all(messageDeletePromises);
+    const messagesQuery = query(messagesRef, where('senderId', '==', userId)); // Query messages by user ID
+    const messagesSnap = await getDocs(messagesQuery); // Fetch matching messages
+    const messageDeletePromises = messagesSnap.docs.map((msgDoc) => deleteDoc(doc(db, 'messages', msgDoc.id))); // Create delete operations for each message
+    await Promise.all(messageDeletePromises); // Wait for all delete operations to complete
 
     // 3. Fetch all flats created by the user
     const flatsRef = collection(db, 'flats');
-    const flatsQuery = query(flatsRef, where('ownerID', '==', userId));
-    const flatsSnap = await getDocs(flatsQuery);
-    const flatIds = flatsSnap.docs.map((flatDoc) => flatDoc.id);
+    const flatsQuery = query(flatsRef, where('ownerID', '==', userId)); // Query flats by owner ID
+    const flatsSnap = await getDocs(flatsQuery); // Fetch matching flats
+    const flatIds = flatsSnap.docs.map((flatDoc) => flatDoc.id); // Extract the IDs of all flats created by the user
 
     // 4. Remove flats from other users' favorites
     const usersRef = collection(db, 'users');
@@ -46,20 +46,19 @@ const handleRemoveUser = async <T extends { id: string }>(userId: string, setUse
 
     // 5. For each flat, delete all associated messages
     for (const flatId of flatIds) {
-      const flatMessagesQuery = query(messagesRef, where('flatID', '==', flatId));
-      const flatMessagesSnap = await getDocs(flatMessagesQuery);
-      const flatMessageDeletePromises = flatMessagesSnap.docs.map((msgDoc) => deleteDoc(doc(db, 'messages', msgDoc.id)));
-      await Promise.all(flatMessageDeletePromises);
+      const flatMessagesQuery = query(messagesRef, where('flatID', '==', flatId)); // Query messages by flat ID
+      const flatMessagesSnap = await getDocs(flatMessagesQuery); // Fetch matching messages
+      const flatMessageDeletePromises = flatMessagesSnap.docs.map((msgDoc) => deleteDoc(doc(db, 'messages', msgDoc.id))); // Create delete operations for each message
+      await Promise.all(flatMessageDeletePromises); // Wait for all delete operations to complete
     }
 
     // 6. Delete all flats created by the user after associated messages are deleted
-    const flatDeletePromises = flatsSnap.docs.map((flatDoc) => deleteDoc(doc(db, 'flats', flatDoc.id)));
-    await Promise.all(flatDeletePromises);
+    const flatDeletePromises = flatsSnap.docs.map((flatDoc) => deleteDoc(doc(db, 'flats', flatDoc.id))); // Create delete operations for each flat
+    await Promise.all(flatDeletePromises); // Wait for all delete operations to complete
 
     // 7. Update state if `setUsers` is provided
-    // This ensures that the user is removed from the local UI
     if (setUsers) {
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId)); // Remove the user from state
     }
   } catch (error) {
     console.error('Error removing user:', error);
