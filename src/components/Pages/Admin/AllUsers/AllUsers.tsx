@@ -177,10 +177,11 @@ const AllUsers: React.FC = () => {
   // Delete user and modal logic
   // Confirm deletion of a user - called when the admin clicks "Delete User"
   const confirmDeleteUser = (userId: string) => {
+    const loggedInUserId = localStorage.getItem('loggedInUser');
     setDeleteTargetId(userId);
     setShowModal({
       isVisible: true,
-      message: 'Are you sure you want to delete this user?',
+      message: userId === loggedInUserId ? 'Are you sure you want to delete your account?' : 'Are you sure you want to delete this user?',
     });
   };
 
