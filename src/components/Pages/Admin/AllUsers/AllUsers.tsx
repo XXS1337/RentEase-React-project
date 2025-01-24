@@ -200,6 +200,7 @@ const AllUsers: React.FC = () => {
         localStorage.removeItem('loggedInUser');
         localStorage.removeItem('loginTime');
         navigate('/login');
+        window.location.reload(); // To correctly reload NavBar
       } else {
         setShowModal({ isVisible: false, message: '' });
         setDeleteTargetId(null);
