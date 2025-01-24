@@ -60,8 +60,8 @@ const NavBar: React.FC = () => {
 
     setShowModal({ isVisible: false, message: '' }); // Close the modal
     setUser(null); // Clear user data in UserContext
-
     navigate('/login'); // Redirect to the login page
+    window.location.reload(); // Reload the page
   };
 
   // Cancel logout and close the modal
