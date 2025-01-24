@@ -186,6 +186,7 @@ const AllUsers = () => {
         localStorage.removeItem('loggedInUser');
         localStorage.removeItem('loginTime');
         navigate('/login');
+        window.location.reload(); // To correctly reload NavBar
       } else {
         // If an admin is deleting another user's account
         setShowModal({ isVisible: false, message: '' });
