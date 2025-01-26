@@ -12,6 +12,7 @@ type User = {
 type UserContextType = {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  loading: boolean;
 };
 
 // Create the UserContext
@@ -20,10 +21,14 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 // Provider component to wrap the application and manage user state
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null); // State to store the current user data
+  const [loading, setLoading] = useState(true); // Add a loading state
 
   useEffect(() => {
     const loggedInUserId = localStorage.getItem('loggedInUser'); // Retrieve the logged-in user's ID from localStorage
-    if (!loggedInUserId) return; // Exit if no user is logged in
+    if (!loggedInUserId) {
+      setLoading(false); // No user logged in, stop loading
+      return;
+    }
 
     const userDocRef = doc(db, 'users', loggedInUserId); // Reference the Firestore document for the logged-in user
 
@@ -34,13 +39,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUser(null); // If the document doesn't exist, clear the user state
       }
+      setLoading(false); // Finished loading
     });
 
     return () => unsubscribe(); // Cleanup the listener when the component unmounts
   }, []); // Dependency array is empty to run this effect only on mount
 
   // Provide the user data and the setUser function to child components
-  return <UserContext.Provider value={{ user, setUser }}>{children}</UserContext.Provider>;
+  return <UserContext.Provider value={{ user, setUser, loading }}>{children}</UserContext.Provider>;
 };
 
 // Custom hook to use the UserContext

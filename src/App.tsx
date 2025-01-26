@@ -16,6 +16,7 @@ import ErrorPage from './components/ErrorPage/ErrorPage';
 import ProtectedRoute from './components/Shared/ProtectedRoute/ProtectedRoute';
 import AppLayout from './components/Layout/AppLayout/AppLayout';
 import type { RouteObject } from 'react-router-dom';
+import GuestRoute from './components/Shared/GuestRoute/GuestRoute';
 
 // Router configuration
 const router = createBrowserRouter([
@@ -31,16 +32,20 @@ const router = createBrowserRouter([
         loader: homeLoader,
       },
       {
-        // Login page route
-        path: 'login',
-        element: <Login />,
-        action: loginAction,
-      },
-      {
-        // Registration page route
-        path: 'register',
-        element: <Register />,
-        action: registerAction,
+        // Restrict login and register to guests only
+        element: <GuestRoute />,
+        children: [
+          {
+            path: 'login',
+            element: <Login />,
+            action: loginAction,
+          },
+          {
+            path: 'register',
+            element: <Register />,
+            action: registerAction,
+          },
+        ],
       },
       {
         // MyFlats section under protected routes
