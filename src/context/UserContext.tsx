@@ -25,6 +25,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const loggedInUserId = localStorage.getItem('loggedInUser'); // Retrieve the logged-in user's ID from localStorage
+
     if (!loggedInUserId) {
       setLoading(false); // No user logged in, stop loading
       return;
