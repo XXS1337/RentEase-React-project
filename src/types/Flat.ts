@@ -1,3 +1,4 @@
+// Interface representing a flat in the system.
 export interface Flat {
   adTitle: string; // Title or name of the flat
   city: string; // City where the flat is located
