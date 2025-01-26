@@ -40,7 +40,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []); // Dependency array is empty to run this effect only on mount
 
   // Provide the user data and the setUser function to child components
-  // Provide the user data and the setUser function to child components
   return <UserContext.Provider value={{ user, setUser }}>{children}</UserContext.Provider>;
 };
 
