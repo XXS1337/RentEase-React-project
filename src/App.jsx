@@ -15,6 +15,7 @@ import Favorites, { favoritesLoader } from './components/User/Favorites/Favorite
 import AllUsers, { allUsersLoader } from './components/Pages/Admin/AllUsers/AllUsers';
 import ErrorPage from './components/ErrorPage/ErrorPage';
 import ProtectedRoute from './components/Shared/ProtectedRoute/ProtectedRoute';
+import GuestRoute from './components/Shared/GuestRoute/GuestRoute';
 
 // Router configuration
 const router = createBrowserRouter([
@@ -30,16 +31,20 @@ const router = createBrowserRouter([
         loader: homeLoader,
       },
       {
-        // Login page route
-        path: 'login',
-        element: <Login />,
-        action: loginAction,
-      },
-      {
-        // Registration page route
-        path: 'register',
-        element: <Register />,
-        action: registerAction,
+        // Restrict login and register to guests only
+        element: <GuestRoute />,
+        children: [
+          {
+            path: 'login',
+            element: <Login />,
+            action: loginAction,
+          },
+          {
+            path: 'register',
+            element: <Register />,
+            action: registerAction,
+          },
+        ],
       },
       {
         // MyFlats section under protected routes
