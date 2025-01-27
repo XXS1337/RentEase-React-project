@@ -1,61 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../../../firebase';
+import { useUser } from '../../../context/UserContext';
 import ErrorPage from '../../ErrorPage/ErrorPage';
 import Spinner from '../../Shared/Spinner/Spinner';
 
 // Component to protect routes and optionally restrict access to admin-only
 const ProtectedRoute = ({ adminOnly = false }) => {
-  const [isLoading, setIsLoading] = useState(true); // State to indicate loading status
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track user authentication
+  const { user, loading } = useUser(); // Access user state from context
   const [isAdmin, setIsAdmin] = useState(false); // State to track admin status
-  const loggedInUser = localStorage.getItem('loggedInUser'); // Retrieve logged-in user ID from localStorage
   const location = useLocation();
 
   // Function to check user authentication and admin status
   useEffect(() => {
-    const checkUser = async () => {
-      // If no user is logged in, set states accordingly and stop loading
-      if (!loggedInUser) {
-        setIsLoading(false);
-        setIsAuthenticated(false);
-        return;
-      }
+    if (user) {
+      setIsAdmin(user.isAdmin || false); // Check if user is an admin from context
+    }
+  }, [user]);
 
-      try {
-        const userDoc = await getDoc(doc(db, 'users', loggedInUser)); // Fetch the user's document from Firestore
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setIsAuthenticated(true); // Mark the user as authenticated
-          setIsAdmin(userData.isAdmin || false); // Check if the user has admin privileges
-        }
-      } catch (error) {
-        console.error('Error checking user:', error);
-      } finally {
-        setIsLoading(false); // Stop the loading spinner regardless of success or failure
-      }
-    };
-
-    checkUser(); // Call the function on component mount
-  }, [loggedInUser]); // Dependency on loggedInUser to re-run if it change
-
-  // Show a spinner while loading user data
-  if (isLoading) {
-    return <Spinner />;
+  if (loading) {
+    return <Spinner />; // Show a spinner while loading user data
   }
 
-  // Redirect to login if the user is not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />; // Redirect to login if the user is not authenticated
   }
 
-  // Show an error page if the route is admin-only and the user is not an admin
   if (adminOnly && !isAdmin) {
-    return <ErrorPage />;
+    return <ErrorPage />; // Show an error page if the route is admin-only and the user is not an admin
   }
 
-  // Render child routes if the user is authorized
+  // Render child routes if the user is authenticated and has required role
   return <Outlet />;
 };
 
