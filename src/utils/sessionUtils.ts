@@ -22,11 +22,6 @@ export function logoutUser(navigate: NavigateFunction, setUser: React.Dispatch<R
 
   setUser(null); // Clear the user state in UserContext
   navigate('/login'); // Redirect the user to the login page
-
-  // Reload the app to reset the NavBar state and show Login and Register links.
-  // Fort the case when the user closes the browser and accesses the page after the 60 min session has expired
-  // Else, the navbar will not be reloaded properly and will show the links as if the user is still logged in.
-  window.location.reload();
 }
 
 // Function to set login details in localStorage

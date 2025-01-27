@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, ChangeEvent } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { useUser } from '../../../../context/UserContext';
 import { db } from '../../../../../firebase';
 import calculateAge from '../../../../utils/calculateAge';
 import flatCount from '../../../../utils/flatCount';
@@ -41,6 +42,7 @@ export const allUsersLoader = async (): Promise<LoaderData> => {
 };
 
 const AllUsers: React.FC = () => {
+  const { user: currentUser, clearUser } = useUser(); // Add this line
   const loaderData = useLoaderData<LoaderData>(); // Load initial user data
   const [allUsersState, setAllUsersState] = useState<AugmentedUser[]>(loaderData.users); // Master list of users
   const [users, setUsers] = useState<AugmentedUser[]>(loaderData.users); // Filtered list of users
@@ -56,9 +58,16 @@ const AllUsers: React.FC = () => {
   }); // State for filtering users
 
   const [sortOption, setSortOption] = useState<string>(''); // State for sorting users
-
   const [showModal, setShowModal] = useState({ isVisible: false, message: '' }); // Modal state
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null); // ID of user to delete
+
+  // If the logged-in user is no longer an admin, redirect them to the homepage
+  useEffect(() => {
+    if (currentUser && !currentUser.isAdmin) {
+      alert('You no longer have admin access. Redirecting to the home page.');
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
 
   // Toggle admin status for a user
   const handleAdminToggle = async (userId: string, isAdmin: boolean) => {
@@ -66,21 +75,16 @@ const AllUsers: React.FC = () => {
       const loggedInUserId = localStorage.getItem('loggedInUser');
       const userRef = doc(db, 'users', userId);
 
-      // Update admin status in Firestore
       await updateDoc(userRef, { isAdmin: !isAdmin });
 
-      // Update state for all users and filtered users
-      setAllUsersState((prevAll) => prevAll.map((user) => (user.id === userId ? { ...user, isAdmin: !isAdmin } : user)));
-      setUsers((prevUsers) => prevUsers.map((user) => (user.id === userId ? { ...user, isAdmin: !isAdmin } : user)));
+      setAllUsersState((prev) => prev.map((user) => (user.id === userId ? { ...user, isAdmin: !isAdmin } : user)));
+      setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, isAdmin: !isAdmin } : user)));
 
-      // Check if the current user is removing their own admin status
       if (userId === loggedInUserId && isAdmin) {
-        alert('You have removed your own admin status. Redirecting to the home page.');
-        navigate('/'); // Redirect to the home page
+        navigate('/');
       }
     } catch (error) {
-      console.error('Error toggling admin permissions:', error);
-      alert('Failed to toggle admin permissions.');
+      console.error('Error toggling admin:', error);
     }
   };
 
@@ -193,15 +197,14 @@ const AllUsers: React.FC = () => {
     try {
       await handleRemoveUser(deleteTargetId, setAllUsersState);
 
-      const updatedUsers = allUsersState.filter((user) => user.id !== deleteTargetId);
-      setUsers(updatedUsers);
-
       if (deleteTargetId === localStorage.getItem('loggedInUser')) {
-        localStorage.removeItem('loggedInUser');
-        localStorage.removeItem('loginTime');
+        clearUser(); // Clear session for logged-in user
+
         navigate('/login');
-        window.location.reload(); // To correctly reload NavBar
       } else {
+        // Regular deletion for other users
+        const updatedUsers = allUsersState.filter((user) => user.id !== deleteTargetId);
+        setUsers(updatedUsers);
         setShowModal({ isVisible: false, message: '' });
         setDeleteTargetId(null);
       }

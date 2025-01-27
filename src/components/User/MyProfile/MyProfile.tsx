@@ -94,7 +94,7 @@ export const myProfileAction = async ({ request }: { request: Request }) => {
 const MyProfile: React.FC = () => {
   const { userID } = useParams<{ userID: string }>(); // Retrieve the userID from the route parameters if editing another user's profile
   const navigate = useNavigate();
-  const { setUser } = useUser(); // Access the global user context to update the logged-in user's data globally
+  const { setUser, clearUser } = useUser(); // Access the global user context to update the logged-in user's data globally
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null); // State for the logged-in user
   const [editedUserId, setEditedUserId] = useState<string | null>(null); // State for the user being edited
 
@@ -159,6 +159,7 @@ const MyProfile: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        navigate('/'); // Redirect to a safe route if data is invalid
       } finally {
         setIsLoading(false); // Stop the loading spinner once data is fetched
       }
@@ -280,10 +281,8 @@ const MyProfile: React.FC = () => {
       await handleRemoveUser(editedUserId!, () => {}); // Remove the edited user's account and associated data from Firestore
 
       if (editedUserId === loggedInUserId) {
-        setUser(null);
         // If the logged-in user is deleting their own account
-        localStorage.removeItem('loggedInUser');
-        localStorage.removeItem('loginTime');
+        clearUser(); // Use clearUser to clear session and context
         navigate('/login');
       } else {
         // If an admin is deleting another user's account
@@ -292,7 +291,7 @@ const MyProfile: React.FC = () => {
       }
     } catch (error) {
       console.error('Error removing user:', error);
-      alert('Failed to remove user.');
+      alert('Failed to remove user. Please try again later.');
     }
   };
 
