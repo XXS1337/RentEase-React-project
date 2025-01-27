@@ -11,9 +11,10 @@ type ProtectedRouteProps = {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ adminOnly = false }) => {
   const { user, loading } = useUser(); // Access user state from context
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false); // State to track admin status
   const location = useLocation();
 
+  // Function to check user authentication and admin status
   useEffect(() => {
     if (user) {
       setIsAdmin(user.isAdmin || false); // Check if user is an admin from context
@@ -29,7 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ adminOnly = false }) =>
   }
 
   if (adminOnly && !isAdmin) {
-    return <ErrorPage />; // Show error page if not an admin
+    return <ErrorPage />; // Show an error page if the route is admin-only and the user is not an admin
   }
 
   return <Outlet />; // Render child routes if user is authenticated and has required role

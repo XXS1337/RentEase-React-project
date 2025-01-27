@@ -26,14 +26,14 @@ export const allUsersLoader = async (): Promise<LoaderData> => {
   // Map user documents and augment data with age and flat count
   const users = await Promise.all(
     usersSnapshot.docs.map(async (docSnap) => {
-      const userData = docSnap.data() as User;
+      const userData = docSnap.data() as User; // Retrieve user data
       const flatsCount = await flatCount(docSnap.id); // Count flats owned by the user
       const { id: _, ...rest } = userData; // Prevent overwriting
       return {
         id: docSnap.id, // Use Firestore ID
         ...rest,
-        age: userData.birthDate ? calculateAge(new Date(userData.birthDate)) : 0,
-        publishedFlatsCount: flatsCount,
+        age: userData.birthDate ? calculateAge(new Date(userData.birthDate)) : 0, // Calculate age
+        publishedFlatsCount: flatsCount, // Add flats count to the user data
       };
     })
   );
@@ -65,7 +65,7 @@ const AllUsers: React.FC = () => {
   useEffect(() => {
     if (currentUser && !currentUser.isAdmin) {
       alert('You no longer have admin access. Redirecting to the home page.');
-      navigate('/');
+      navigate('/'); // Redirect non-admin users
     }
   }, [currentUser, navigate]);
 
@@ -75,16 +75,19 @@ const AllUsers: React.FC = () => {
       const loggedInUserId = localStorage.getItem('loggedInUser');
       const userRef = doc(db, 'users', userId);
 
+      // Toggle the admin status in Firestore
       await updateDoc(userRef, { isAdmin: !isAdmin });
 
+      // Update state for all users and filtered users
       setAllUsersState((prev) => prev.map((user) => (user.id === userId ? { ...user, isAdmin: !isAdmin } : user)));
       setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, isAdmin: !isAdmin } : user)));
 
+      // If the logged-in user is removing their own admin status, redirect
       if (userId === loggedInUserId && isAdmin) {
-        navigate('/');
+        navigate('/'); // Redirect to home
       }
     } catch (error) {
-      console.error('Error toggling admin:', error);
+      console.error('Error toggling admin:', error); // Log any errors
     }
   };
 
@@ -190,27 +193,25 @@ const AllUsers: React.FC = () => {
   };
 
   // Handle user deletion - if user confirms "Yes" in the modal
-
   const handleDeleteAccount = async () => {
-    if (!deleteTargetId) return;
+    if (!deleteTargetId) return; // If no target ID, do nothing
 
     try {
-      await handleRemoveUser(deleteTargetId, setAllUsersState);
+      await handleRemoveUser(deleteTargetId, setAllUsersState); // Remove user from state and Firestore
 
       if (deleteTargetId === localStorage.getItem('loggedInUser')) {
         clearUser(); // Clear session for logged-in user
-
-        navigate('/login');
+        navigate('/login'); // Redirect to login page
       } else {
-        // Regular deletion for other users
+        // For other users, just update the state
         const updatedUsers = allUsersState.filter((user) => user.id !== deleteTargetId);
         setUsers(updatedUsers);
         setShowModal({ isVisible: false, message: '' });
-        setDeleteTargetId(null);
+        setDeleteTargetId(null); // Reset the target ID
       }
     } catch (error) {
       console.error('Error removing user:', error);
-      alert('Failed to remove user.');
+      alert('Failed to remove user.'); // Display error
     }
   };
 
